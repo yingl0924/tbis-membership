@@ -14,7 +14,7 @@ instance_dir = os.path.join(basedir, 'instance')
 if not os.path.exists(instance_dir):
     os.makedirs(instance_dir)
 
-db_path = os.path.join(instance_dir, 'tbis.db')
+db_path = '/tmp/tbis.db'password_hash = db.Column(db.String(255))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
