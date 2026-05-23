@@ -809,8 +809,14 @@ def member_dashboard():
     return render_template_string(MEMBER_DASHBOARD_HTML, member=member)
 
 # ----------------- 启动 -----------------
-if __name__ == '__main__':
+# 创建表的函数（全局作用域执行）
+def create_tables():
     with app.app_context():
         db.create_all()
         print("Database tables created successfully!")
+
+create_tables()   # ← 这行会在导入时执行
+
+# 启动服务器（仅在直接运行脚本时执行）
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
