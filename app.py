@@ -108,7 +108,7 @@ NAVBAR_BRAND = '''
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="/">
-            <img src="https://via.placeholder.com/30x30?text=TB" alt="TBIS Logo" width="30" height="30" class="d-inline-block align-top me-2">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="TBIS Logo" width="30" height="30" class="d-inline-block align-top me-2">
             TBIS Society
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
