@@ -707,11 +707,47 @@ def staff_logout():
 @staff_required
 def dashboard():
     status_filter = request.args.get('status', 'pending')
+    keyword = request.args.get('keyword', '').strip()
+    search_by = request.args.get('search_by', 'name')  # 默认按姓名
+
+    # 基础查询：按状态过滤
     if status_filter == 'all':
-        members = Member.query.order_by(Member.created_at.desc()).all()
+        query = Member.query
     else:
-        members = Member.query.filter_by(status=status_filter).order_by(Member.created_at.desc()).all()
-    return render_template_string(DASHBOARD_HTML, members=members, status=status_filter)
+        query = Member.query.filter_by(status=status_filter)
+
+    # 关键词模糊搜索
+    if keyword:
+        if search_by == 'name':
+            query = query.filter(
+                db.or_(
+                    Member.first_name.ilike(f'%{keyword}%'),
+                    Member.last_name.ilike(f'%{keyword}%')
+                )
+            )
+        elif search_by == 'email':
+            query = query.filter(Member.email.ilike(f'%{keyword}%'))
+        elif search_by == 'institution':
+            query = query.filter(Member.institution.ilike(f'%{keyword}%'))
+        elif search_by == 'member_number':
+            query = query.filter(Member.member_number.ilike(f'%{keyword}%'))
+        else:
+            # 默认仍按姓名
+            query = query.filter(
+                db.or_(
+                    Member.first_name.ilike(f'%{keyword}%'),
+                    Member.last_name.ilike(f'%{keyword}%')
+                )
+            )
+
+    members = query.order_by(Member.created_at.desc()).all()
+    return render_template_string(
+        DASHBOARD_HTML,
+        members=members,
+        status=status_filter,
+        keyword=keyword,
+        search_by=search_by
+    )
 
 @app.route('/staff/review/<int:member_id>/<action>', methods=['POST'])
 @staff_required
