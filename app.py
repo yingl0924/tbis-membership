@@ -14,7 +14,18 @@ instance_dir = os.path.join(basedir, 'instance')
 if not os.path.exists(instance_dir):
     os.makedirs(instance_dir)
 
-db_path = '/tmp/tbis.db'password_hash = db.Column(db.String(255))
+import os
+basedir = os.path.abspath(os.path.dirname(__file__))
+instance_dir = os.path.join(basedir, 'instance')
+if not os.path.exists(instance_dir):
+    os.makedirs(instance_dir)
+
+# 如果是 Render 环境，使用 /tmp；否则使用本地 instance 文件夹
+if os.environ.get('RENDER'):
+    db_path = '/tmp/tbis.db'
+else:
+    db_path = os.path.join(instance_dir, 'tbis.db')
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -49,7 +60,7 @@ class Member(db.Model):
     personal_website = db.Column(db.String(200))
     referral_source = db.Column(db.String(100))
     statement = db.Column(db.Text)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(255))
     status = db.Column(db.String(20), default='pending')
     member_number = db.Column(db.String(20), unique=True)
     join_date = db.Column(db.Date)
