@@ -4,6 +4,7 @@ from flask import Flask, request, render_template_string, redirect, url_for, fla
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import or_
 
 # ----------------- 基础配置 -----------------
 app = Flask(__name__)
@@ -241,7 +242,6 @@ APPLY_HTML = f'''
                         <div class="col-md-6"><label class="form-label required">Gender</label>
                             <select name="gender" class="form-select" required>
                                 <option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option>
-                                <option value="Non-binary">Non-binary</option><option value="Prefer not to say">Prefer not to say</option>
                             </select>
                         </div>
                         <div class="col-md-6"><label class="form-label required">Nationality</label><input type="text" name="nationality" class="form-control" required placeholder="e.g., American, German, Japanese"></div>
@@ -254,14 +254,13 @@ APPLY_HTML = f'''
                         <div class="col-md-6"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control" placeholder="+1 234 567 8900"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label required">Current Address</label>
-                        <input type="text" name="address_line1" class="form-control mb-2" required placeholder="Street address">
-                        <input type="text" name="address_line2" class="form-control" placeholder="Apartment, suite, etc. (optional)">
+                        <label class="form-label required">Social media account</label>
+                        <input type="text" name="address_line1" class="form-control mb-2" required placeholder="Wechat(If none, please fill in "/".)">
+                        <input type="text" name="address_line2" class="form-control" placeholder="Whatsapp((If none, please fill in "/".)))">
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4"><label class="form-label required">City</label><input type="text" name="city" class="form-control" required></div>
                         <div class="col-md-4"><label class="form-label">State/Province</label><input type="text" name="state" class="form-control"></div>
-                        <div class="col-md-4"><label class="form-label required">Country</label><input type="text" name="country" class="form-control" required></div>
                     </div>
 
                     <!-- 3. Professional Information -->
@@ -272,7 +271,6 @@ APPLY_HTML = f'''
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6"><label class="form-label required">Department</label><input type="text" name="department" class="form-control" required></div>
-                        <div class="col-md-6"><label class="form-label">Institution Website</label><input type="url" name="institution_website" class="form-control" placeholder="https://www.example.edu"></div>
                     </div>
 
                     <!-- 4. Academic Background -->
@@ -284,7 +282,6 @@ APPLY_HTML = f'''
                         </select>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-md-6"><label class="form-label">Field of Study</label><input type="text" name="field_of_study" class="form-control"></div>
                         <div class="col-md-6"><label class="form-label">Year of Graduation</label><input type="number" name="graduation_year" class="form-control" min="1950" max="2030"></div>
                     </div>
 
@@ -314,10 +311,12 @@ APPLY_HTML = f'''
                     <div class="mb-3">
                         <select name="membership_type" class="form-select" required>
                             <option value="">Select membership type</option>
-                            <option value="Regular">Regular Member ($150/year)</option>
-                            <option value="Student">Student Member ($50/year)</option>
-                            <option value="Early Career">Early Career Researcher ($75/year)</option>
-                            <option value="Emeritus">Emeritus Member ($100/year)</option>
+                            <option value="Regular">Regular Member ($100/year)</option>
+                            <option value="Student">Student Member ($15/year)</option>
+                            <option value="Senior">Senior Member ($150/year)</option>
+                            <option value="IEC">IEC Member </option>
+                            <option value="Fellow">Fellow </option>
+                            <option value="Group">Group ($1000/year)</option>
                         </select>
                         <small class="text-muted">Student members must provide proof of enrollment</small>
                     </div>
@@ -417,6 +416,7 @@ STAFF_LOGIN_HTML = f'''
 '''
 
 # 员工审核面板
+# 员工审核面板（添加搜索框）
 DASHBOARD_HTML = f'''
 <!DOCTYPE html>
 <html lang="en">
@@ -427,6 +427,7 @@ DASHBOARD_HTML = f'''
     <style>
         .member-detail {{ font-size: 0.9rem; }}
         .badge {{ font-size: 0.85rem; }}
+        .search-bar {{ margin-bottom: 20px; }}
     </style>
 </head>
 <body>
@@ -446,6 +447,34 @@ DASHBOARD_HTML = f'''
                 <a href="?status=approved" class="btn btn-outline-success {{{{ 'active' if status=='approved' }}}}">Approved</a>
                 <a href="?status=rejected" class="btn btn-outline-danger {{{{ 'active' if status=='rejected' }}}}">Rejected</a>
                 <a href="?status=all" class="btn btn-outline-secondary {{{{ 'active' if status=='all' }}}}">All</a>
+            </div>
+        </div>
+
+        <!-- 搜索表单 -->
+        <div class="card search-bar">
+            <div class="card-body">
+                <form method="GET" action="{{{{ url_for('dashboard') }}}}" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" name="keyword" class="form-control" placeholder="输入关键词搜索..." value="{{{{ keyword if keyword else '' }}}}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="search_by" class="form-select">
+                            <option value="name" {{{{ 'selected' if search_by=='name' else '' }}}}>按姓名</option>
+                            <option value="email" {{{{ 'selected' if search_by=='email' else '' }}}}>按邮箱</option>
+                            <option value="institution" {{{{ 'selected' if search_by=='institution' else '' }}}}>按机构</option>
+                            <option value="member_number" {{{{ 'selected' if search_by=='member_number' else '' }}}}>按会员号</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">搜索</button>
+                    </div>
+                    {{% if keyword %}}
+                    <div class="col-12">
+                        <a href="?status={{{{ status }}}}" class="btn btn-sm btn-secondary">清除搜索</a>
+                        <span class="ms-2 text-muted">当前搜索：{{{{ keyword }}}} ({{{{ search_by }}}})</span>
+                    </div>
+                    {{% endif %}}
+                </form>
             </div>
         </div>
 
@@ -719,19 +748,17 @@ def staff_logout():
 def dashboard():
     status_filter = request.args.get('status', 'pending')
     keyword = request.args.get('keyword', '').strip()
-    search_by = request.args.get('search_by', 'name')  # 默认按姓名
+    search_by = request.args.get('search_by', 'name')
 
-    # 基础查询：按状态过滤
     if status_filter == 'all':
         query = Member.query
     else:
         query = Member.query.filter_by(status=status_filter)
 
-    # 关键词模糊搜索
     if keyword:
         if search_by == 'name':
             query = query.filter(
-                db.or_(
+                or_(
                     Member.first_name.ilike(f'%{keyword}%'),
                     Member.last_name.ilike(f'%{keyword}%')
                 )
@@ -743,9 +770,9 @@ def dashboard():
         elif search_by == 'member_number':
             query = query.filter(Member.member_number.ilike(f'%{keyword}%'))
         else:
-            # 默认仍按姓名
+            # 默认按姓名搜索
             query = query.filter(
-                db.or_(
+                or_(
                     Member.first_name.ilike(f'%{keyword}%'),
                     Member.last_name.ilike(f'%{keyword}%')
                 )
@@ -759,7 +786,6 @@ def dashboard():
         keyword=keyword,
         search_by=search_by
     )
-
 @app.route('/staff/review/<int:member_id>/<action>', methods=['POST'])
 @staff_required
 def review(member_id, action):
