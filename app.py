@@ -455,14 +455,15 @@ DASHBOARD_HTML = f'''
             <div class="card-body">
                 <form method="GET" action="{{{{ url_for('dashboard') }}}}" class="row g-3">
                     <div class="col-md-6">
-                        <input type="text" name="keyword" class="form-control" placeholder="输入关键词搜索..." value="{{{{ keyword if keyword else '' }}}}">
+                        <input type="text" name="keyword" class="form-control" placeholder="Search by entering keywords..." value="{{{{ keyword if keyword else '' }}}}">
                     </div>
                     <div class="col-md-3">
                         <select name="search_by" class="form-select">
-                            <option value="name" {{{{ 'selected' if search_by=='name' else '' }}}}>按姓名</option>
-                            <option value="email" {{{{ 'selected' if search_by=='email' else '' }}}}>按邮箱</option>
-                            <option value="institution" {{{{ 'selected' if search_by=='institution' else '' }}}}>按机构</option>
-                            <option value="member_number" {{{{ 'selected' if search_by=='member_number' else '' }}}}>按会员号</option>
+                            <option value="name" {{{{ 'selected' if search_by=='name' else '' }}}}>According to the name</option>
+                            <option value="email" {{{{ 'selected' if search_by=='email' else '' }}}}>According to the email</option>
+                            <option value="institution" {{{{ 'selected' if search_by=='institution' else '' }}}}>According to the institution</option>
+                            <option value="member_number" {{{{ 'selected' if search_by=='member_number' else '' }}}}>According to the member_number</option>
+                            <option value="nationality" {{{{ 'selected' if search_by=='nationality' else '' }}}}>According to the nationality</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -769,6 +770,8 @@ def dashboard():
             query = query.filter(Member.institution.ilike(f'%{keyword}%'))
         elif search_by == 'member_number':
             query = query.filter(Member.member_number.ilike(f'%{keyword}%'))
+        elif search_by == 'nationality':
+            query = query.filter(Member.nationality.ilike(f'%{keyword}%'))
         else:
             # 默认按姓名搜索
             query = query.filter(
